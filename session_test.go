@@ -1523,6 +1523,29 @@ func (s *S) TestCountQuery(c *C) {
 	c.Assert(n, Equals, 2)
 }
 
+func (s *S) TestCountQueryWithCollation(c *C) {
+	session, err := mgo.Dial("localhost:40001")
+	c.Assert(err, IsNil)
+	defer session.Close()
+
+	coll := session.DB("mydb").C("mycoll")
+	info := &mgo.CollectionInfo{
+		Collation: &mgo.Collation{Locale: "en", Strength: 2},
+	}
+	err = coll.Create(info)
+	c.Assert(err, IsNil)
+
+	ns := []string{"hello", "Hello", "hEllO"}
+	for _, n := range ns {
+		err := coll.Insert(M{"n": n})
+		c.Assert(err, IsNil)
+	}
+
+	n, err := coll.Find(M{"n": "hello"}).Collation(M{Locale: "en", Strength: 2}).Count()
+	c.Assert(err, IsNil)
+	c.Assert(n, Equals, 3)
+}
+
 func (s *S) TestCountQuerySorted(c *C) {
 	session, err := mgo.Dial("localhost:40001")
 	c.Assert(err, IsNil)
